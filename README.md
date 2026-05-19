@@ -25,8 +25,5 @@ pip install -r requirements.txt
 streamlit run researcher.py
 ```
 
-## Demo
-![screenshot](screenshot.png)
-
 ## Tech Stack
 Python · Streamlit · LangChain · Ollama · Llama 3 · Google Play Scraper
