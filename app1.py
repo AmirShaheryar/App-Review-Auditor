@@ -63,3 +63,28 @@ def run_audit(app_id, app_name, count, time_filter):
         analysis = llm.invoke(prompt)
         status.update(label='Audit Complete!', state='complete')
         return analysis, all_data
+with st.sidebar:
+    st.header('Settings')
+    sample_size = st.slider('Max Reviews', 10, 100, 50)
+    time_filter = st.selectbox('Timeframe', ['All Time', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days'])
+
+query = st.text_input('Enter App Name or Package ID:')
+if st.button('Generate Verified Audit'):
+    if query:
+        app_id, official_name = fetch_app_info(query)
+        if app_id:
+            report, raw_reviews = run_audit(app_id, official_name, sample_size, time_filter)
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                st.subheader('🚩 AI Audit Findings')
+                st.markdown(report)
+            with col2:
+                st.subheader('🔍 Source Truth')
+                with st.expander('View Raw Data'):
+                    for r in raw_reviews:
+                        st.caption(f'{r["score"]}⭐')
+                        st.write(r['content'])
+                        st.divider()
+            st.download_button('Download Report', report, file_name=f'{official_name}_audit.md')
+        else:
+            st.error('App not found.')
