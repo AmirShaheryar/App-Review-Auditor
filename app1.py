@@ -23,3 +23,16 @@ KNOWN_APPS = {
     'uber': 'com.ubercabs',
     'gmail': 'com.google.android.gm',
 }
+def fetch_app_info(user_query):
+    query_clean = user_query.strip().lower()
+    if '.' in user_query and ' ' not in user_query:
+        return user_query.strip(), user_query.strip()
+    if query_clean in KNOWN_APPS:
+        return KNOWN_APPS[query_clean], user_query.title()
+    try:
+        results = search(query_clean, n_hits=1, lang='en', country='us')
+        if results:
+            return results[0]['appId'], results[0]['title']
+    except Exception as e:
+        st.error(f'Search failed: {e}')
+    return None, None
