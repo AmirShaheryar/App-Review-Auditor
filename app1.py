@@ -36,3 +36,30 @@ def fetch_app_info(user_query):
     except Exception as e:
         st.error(f'Search failed: {e}')
     return None, None
+def run_audit(app_id, app_name, count, time_filter):
+    cutoff = None
+    if time_filter == 'Last 7 Days':
+        cutoff = datetime.now() - timedelta(days=7)
+    elif time_filter == 'Last 30 Days':
+        cutoff = datetime.now() - timedelta(days=30)
+    elif time_filter == 'Last 90 Days':
+        cutoff = datetime.now() - timedelta(days=90)
+
+    with st.status(f'Auditing {app_name}...', expanded=True) as status:
+        st.write('📡 Accessing Play Store...')
+        all_data = []
+        for score in [1, 2]:
+            data, _ = reviews(app_id, lang='en', country='us', sort=Sort.NEWEST, count=count // 2, filter_score_with=score)
+            all_data.extend(data)
+        if cutoff:
+            all_data = [r for r in all_data if r['at'] >= cutoff]
+        all_data = sorted(all_data, key=lambda x: x['at'], reverse=True)[:count]
+        if not all_data:
+            status.update(label='No reviews found!', state='complete')
+            return 'No reviews found.', []
+        st.write(f'🧠 Llama 3 analyzing {len(all_data)} reviews...')
+        review_text = '\n'.join([f'[ID:{i}] {r["content"]}' for i, r in enumerate(all_data)])
+        prompt = f'Identify the 3 most frequent failures in these reviews for {app_name}. For each, provide a Direct Quote as evidence. Reviews: {review_text}'
+        analysis = llm.invoke(prompt)
+        status.update(label='Audit Complete!', state='complete')
+        return analysis, all_data
